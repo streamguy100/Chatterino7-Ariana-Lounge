@@ -2698,7 +2698,7 @@ index 000000000..d6b481d5d
 +}  // namespace chatterino
 diff --git a/src/widgets/ArianaMusic.cpp b/src/widgets/ArianaMusic.cpp
 new file mode 100644
-index 000000000..8b1746130
+index 000000000..d2025e054
 --- /dev/null
 +++ b/src/widgets/ArianaMusic.cpp
 @@ -0,0 +1,441 @@
@@ -2807,7 +2807,7 @@ index 000000000..8b1746130
 +            {
 +                this->cutTimer_->stop();
 +            }
-+            emit this->playingChanged(
++            Q_EMIT this->playingChanged(
 +                state == QMediaPlayer::PlayingState);
 +        });
 +
@@ -2895,7 +2895,7 @@ index 000000000..8b1746130
 +    {
 +        this->audio_->setVolume(static_cast<float>(volume) / 100.F);
 +    }
-+    emit this->volumeChanged(volume);
++    Q_EMIT this->volumeChanged(volume);
 +}
 +
 +void ArianaMusic::onEnabledChanged(bool enabled)
@@ -2907,11 +2907,11 @@ index 000000000..8b1746130
 +    if (!this->settingsReady_)
 +    {
 +        this->settingsReady_ = true;
-+        emit this->enabledChanged(enabled);
-+        emit this->availabilityChanged();
++        Q_EMIT this->enabledChanged(enabled);
++        Q_EMIT this->availabilityChanged();
 +        return;
 +    }
-+    emit this->enabledChanged(enabled);
++    Q_EMIT this->enabledChanged(enabled);
 +    if (enabled)
 +    {
 +        if (this->hasFiles())
@@ -2920,7 +2920,7 @@ index 000000000..8b1746130
 +        }
 +        else
 +        {
-+            emit this->availabilityChanged();
++            Q_EMIT this->availabilityChanged();
 +        }
 +    }
 +    else
@@ -2933,15 +2933,15 @@ index 000000000..8b1746130
 +{
 +    if (!this->hasFiles())
 +    {
-+        emit this->availabilityChanged();
++        Q_EMIT this->availabilityChanged();
 +        return;
 +    }
 +    const QString path =
 +        musicFolder() + "/" + FILES.at(this->currentIndex_);
 +    this->player_->setSource(QUrl::fromLocalFile(path));
 +    this->player_->play();
-+    emit this->trackChanged(this->currentTitle());
-+    emit this->availabilityChanged();
++    Q_EMIT this->trackChanged(this->currentTitle());
++    Q_EMIT this->availabilityChanged();
 +}
 +
 +void ArianaMusic::checkCutoff()
@@ -3014,7 +3014,7 @@ index 000000000..8b1746130
 +    }
 +    else
 +    {
-+        emit this->trackChanged(this->currentTitle());
++        Q_EMIT this->trackChanged(this->currentTitle());
 +    }
 +}
 +
@@ -3028,7 +3028,7 @@ index 000000000..8b1746130
 +    }
 +    else
 +    {
-+        emit this->trackChanged(this->currentTitle());
++        Q_EMIT this->trackChanged(this->currentTitle());
 +    }
 +}
 +
@@ -3145,7 +3145,7 @@ index 000000000..8b1746130
 +}  // namespace chatterino
 diff --git a/src/widgets/ArianaMusic.hpp b/src/widgets/ArianaMusic.hpp
 new file mode 100644
-index 000000000..4400ed25e
+index 000000000..d04376221
 --- /dev/null
 +++ b/src/widgets/ArianaMusic.hpp
 @@ -0,0 +1,93 @@
@@ -3205,7 +3205,7 @@ index 000000000..4400ed25e
 +    /// music is off or the files are missing.
 +    void startIfEnabled();
 +
-+public slots:
++public Q_SLOTS:
 +    void setEnabled(bool enabled);
 +    void setVolume(int volume);
 +    void togglePlay();
@@ -3216,7 +3216,7 @@ index 000000000..4400ed25e
 +    void prev();
 +    void toggleMute();
 +
-+signals:
++Q_SIGNALS:
 +    void enabledChanged(bool enabled);
 +    void volumeChanged(int volume);
 +    void trackChanged(const QString &title);
