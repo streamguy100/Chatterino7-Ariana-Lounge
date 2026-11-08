@@ -41,14 +41,51 @@ jobs:
           git checkout 910b01dd428c4ac042028708704278b93227491b
           git submodule update --init --recursive
 
+      # Run #1 FAILED SILENTLY here: git apply failed on the binary-JPG
+      # hunk ("git diff header lacks filename information") but the step
+      # exited 0, so the run built stock Chatterino7 and shipped it as
+      # Ariana Lounge. The patch is now TEXT-ONLY (the JPG ships as a
+      # separate repo file, copied in by the next step), and this step
+      # now throws on ANY failure and verifies the patch actually landed.
       - name: Apply Ariana Lounge patch
         shell: pwsh
         run: |
           Copy-Item ariana-lounge.patch upstream/ariana-lounge.patch
           cd upstream
+          if (Select-String -Path ariana-lounge.patch -Pattern "GIT binary patch" -Quiet) { throw "Patch still contains a binary hunk — it must be text-only" }
           git apply ariana-lounge.patch
+          if ($LASTEXITCODE -ne 0) { throw "git apply ariana-lounge.patch FAILED with exit code $LASTEXITCODE — patch did not land, stopping the build" }
+          if (-not (Test-Path src/widgets/ArianaLounge.cpp)) { throw "Patch did NOT land: src/widgets/ArianaLounge.cpp is missing" }
+          if (-not (Test-Path src/widgets/ArianaLoadingScreen.cpp)) { throw "Patch did NOT land: src/widgets/ArianaLoadingScreen.cpp is missing" }
+          if (-not (Test-Path src/widgets/ArianaMusic.cpp)) { throw "Patch did NOT land: src/widgets/ArianaMusic.cpp is missing" }
+          if (-not (Test-Path resources/themes/ArianaSweetener.json)) { throw "Patch did NOT land: resources/themes/ArianaSweetener.json is missing" }
           git status --short
           git diff --stat
+          # NOTE: git diff only lists TRACKED files (14) — the 19 new
+          # files are untracked, so count via git status instead. The
+          # patch file itself (ariana-lounge.patch, copied into upstream/
+          # above) is untracked too, so exclude it from the count.
+          $changed = (git status --porcelain | Where-Object { $_ -notmatch 'ariana-lounge\.patch' } | Measure-Object -Line).Lines
+          if ($changed -ne 33) { throw "Patch landed $changed files, expected 33 — stopping the build" }
+          Write-Host "Patch landed: $changed files"
+
+      # The loading-screen JPG is NOT in the patch (a binary hunk broke
+      # git apply in run #1). It ships as ariana-loading-screen.jpg at
+      # the repo root and is copied into upstream/resources/ here, BEFORE
+      # the Build step, so Chatterino's generate_resources.cmake glob
+      # embeds it as :/ariana-loading-screen.jpg. The SHA-256 is checked
+      # so a wrong or corrupt image can never ship silently.
+      - name: Copy loading-screen image
+        shell: pwsh
+        run: |
+          $expected = "049a088a309fdf03f1bdfdafc4bb6f18fccb198db2e6d2676496ce52080990e2"
+          if (-not (Test-Path ariana-loading-screen.jpg)) { throw "ariana-loading-screen.jpg is missing from the repo root" }
+          $actual = (Get-FileHash ariana-loading-screen.jpg -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) { throw "ariana-loading-screen.jpg SHA-256 mismatch: got $actual, expected $expected" }
+          Copy-Item ariana-loading-screen.jpg upstream/resources/ariana-loading-screen.jpg -Force
+          $copied = (Get-FileHash upstream/resources/ariana-loading-screen.jpg -Algorithm SHA256).Hash.ToLower()
+          if ($copied -ne $expected) { throw "Copied JPG SHA-256 mismatch: got $copied" }
+          Write-Host "Loading-screen JPG verified and copied, SHA-256 $copied"
 
       # Qt Multimedia is needed for the Ariana Lounge background music
       # (QMediaPlayer + QAudioOutput). The Qt cache key is bumped to
