@@ -24,9 +24,16 @@ and short lyric fragments (text only) only.
 
 **Loading screen (shows on every open):** sir's supplied image
 ("ARIANA GRANDE CHATTERINO 7TV", Ariana Grande in a purple stage
-outfit on a round platform) is embedded in the patch as
-`resources/ariana-loading-screen.jpg` — byte-identical to the file
-sir sent, never regenerated or recoloured. On every app open it
+outfit on a round platform) is byte-identical to the file
+sir sent, never regenerated or recoloured — but it is NOT inside the
+patch: the patch is text-only, and the JPG ships as a separate repo
+file (`ariana-loading-screen.jpg` at the repo root). The workflow
+copies it into `resources/ariana-loading-screen.jpg` before building
+and checks its SHA-256 first, so Chatterino's resource generator
+embeds it as `:/ariana-loading-screen.jpg`. (Run #1 lesson: a binary
+JPG hunk inside the patch made `git apply` fail on the runner, and
+the unchecked step then built stock Chatterino7 and shipped it as
+Ariana Lounge.) On every app open it
 covers the Main window full-screen, then fades out: 100% at 0s,
 75% at 1s, 50% at 2s, 25% at 3s, 0% (gone) at 4s. A 1-second QTimer
 steps the opacity by 0.25, plus a hard 4-second fallback hides it
@@ -112,14 +119,18 @@ control — no stock Chatterino volume/audio behaviour is touched.
 
 ## Files
 
-- `ariana-lounge.patch` — 6,243 lines in the file (34 files,
-  +3,746 / −1; the line count is higher than the code because the
-  loading-screen JPEG is stored as a binary patch), on clean
+- `ariana-lounge.patch` — 4,175 lines in the file (33 files,
+  +3,746 / −1), TEXT-ONLY, on clean
   SevenTV/chatterino7 at `910b01dd428c4ac042028708704278b93227491b`.
+  The loading-screen JPG is deliberately NOT in the patch: a binary
+  hunk broke `git apply` on the GitHub runner in run #1 (the step
+  did not check the exit code, so the run built stock Chatterino7
+  and shipped it under the Ariana name). The JPG ships as a separate
+  repo file instead — see `ariana-loading-screen.jpg` below.
   Verified: `git apply --check` passes and `git apply` applies cleanly
-  with no rejects on a fresh clone of that commit (checked twice,
-  most recently after the loading-screen addition, and the image in
-  the patched tree has SHA-256
+  with no rejects on a fresh clone of that commit, `git diff --check`
+  clean, 33 files land, and the JPG copy + SHA-256 check pass
+  (copied file hashes to
   `049a088a309fdf03f1bdfdafc4bb6f18fccb198db2e6d2676496ce52080990e2`,
   identical to sir's supplied file).
   New files: `src/widgets/ArianaLounge.{hpp,cpp}`,
@@ -129,8 +140,9 @@ control — no stock Chatterino volume/audio behaviour is touched.
   music bar, QMediaPlayer + QAudioOutput),
   `src/widgets/settingspages/ArianaPage.{hpp,cpp}`,
   `src/controllers/commands/builtin/ArianaCommands.{hpp,cpp}`,
-  9 theme JSONs in `resources/themes/`,
-  `resources/ariana-loading-screen.jpg` (sir's image, byte-identical).
+  9 theme JSONs in `resources/themes/`.
+  (No `resources/ariana-loading-screen.jpg` in the patch any more —
+  that file arrives via the workflow copy step.)
   Edited (additive only):
   `CMakeLists.txt` (Qt `Multimedia` component),
   `Settings.hpp` (music on/off + volume settings), `Theme.cpp`,
@@ -139,6 +151,14 @@ control — no stock Chatterino volume/audio behaviour is touched.
   `SettingsDialogTab.hpp`, `Split.cpp`, `CommandController.cpp`,
   `src/CMakeLists.txt` (ArianaMusic + ArianaLoadingScreen sources +
   `Qt6::Multimedia` link).
+- `ariana-loading-screen.jpg` — sir's supplied loading-screen image
+  (1024x572 JPEG, SHA-256
+  `049a088a309fdf03f1bdfdafc4bb6f18fccb198db2e6d2676496ce52080990e2`),
+  a separate repo file at the repo root. The workflow's "Copy
+  loading-screen image" step copies it into
+  `upstream/resources/ariana-loading-screen.jpg` before building and
+  throws if the SHA-256 does not match, so a wrong or corrupt image
+  can never ship silently. Never regenerate or recolour it.
 - `build-ariana-lounge.yml` — GitHub Actions, adapted from the
   Fold-iPhone workflow (same Qt 6.9.3 / MSVC2022 / windows-2022 /
   conan 2.11.0 pattern, Setup Python BEFORE clone to avoid the
@@ -146,6 +166,13 @@ control — no stock Chatterino volume/audio behaviour is touched.
   packaging). Qt install now also includes the `qtmultimedia`
   module (Qt cache key bumped to v2 so a cached Qt without it is
   not reused). Output: `Chatterino7ArianaLounge.exe` / `.zip`.
+  The "Apply Ariana Lounge patch" step now fails the build if the
+  patch does not land: it rejects any binary hunk in the patch,
+  throws on a non-zero `git apply` exit code, checks
+  `ArianaLounge.cpp`, `ArianaLoadingScreen.cpp`, `ArianaMusic.cpp`
+  and `resources/themes/ArianaSweetener.json` exist, and throws
+  unless exactly 33 files changed (counted via `git status`, since
+  `git diff` hides the 19 new untracked files).
 - `themes/` — the 9 theme JSONs (same files as in the patch).
 - `ARIANA-LOUNGE-DESIGN.md` — the full design, More 1–4 all in.
 - `concepts/` — 22 concept images (hero + 9 themes + 12 pieces).
