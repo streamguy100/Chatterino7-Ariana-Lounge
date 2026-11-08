@@ -119,8 +119,8 @@ control — no stock Chatterino volume/audio behaviour is touched.
 
 ## Files
 
-- `ariana-lounge.patch` — 4,201 lines in the file (34 files,
-  +3,766 / −1), TEXT-ONLY, on clean
+- `ariana-lounge.patch` — 4,230 lines in the file (34 files,
+  +3,788 / −1), TEXT-ONLY, on clean
   SevenTV/chatterino7 at `910b01dd428c4ac042028708704278b93227491b`.
   The loading-screen JPG is deliberately NOT in the patch: a binary
   hunk broke `git apply` on the GitHub runner in run #1 (the step

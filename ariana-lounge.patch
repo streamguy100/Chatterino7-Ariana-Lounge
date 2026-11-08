@@ -3287,7 +3287,7 @@ index 000000000..06f48c39c
 +
 +}  // namespace chatterino
 diff --git a/src/widgets/Window.cpp b/src/widgets/Window.cpp
-index a013e705f..7272eafcd 100644
+index a013e705f..59bb93335 100644
 --- a/src/widgets/Window.cpp
 +++ b/src/widgets/Window.cpp
 @@ -22,6 +22,10 @@
@@ -3324,15 +3324,16 @@ index a013e705f..7272eafcd 100644
  #include <QStandardItemModel>
  #include <QVBoxLayout>
  
-@@ -66,6 +75,7 @@ Window::Window(WindowType type, QWidget *parent)
+@@ -66,6 +75,8 @@ Window::Window(WindowType type, QWidget *parent)
      this->addCustomTitlebarButtons();
      this->addShortcuts();
      this->addLayout();
 +    this->addArianaShortcuts();
++    this->arianaFixResize();
  
  #ifdef Q_OS_MACOS
      this->addMenuBar();
-@@ -154,6 +164,22 @@ bool Window::event(QEvent *event)
+@@ -154,6 +165,22 @@ bool Window::event(QEvent *event)
              break;
          }
  
@@ -3355,7 +3356,7 @@ index a013e705f..7272eafcd 100644
          case QEvent::WindowDeactivate: {
              auto *page = this->notebook_->getSelectedPage();
  
-@@ -216,7 +242,57 @@ void Window::addLayout()
+@@ -216,7 +243,57 @@ void Window::addLayout()
  {
      auto *layout = new QVBoxLayout();
  
@@ -3414,7 +3415,7 @@ index a013e705f..7272eafcd 100644
      this->getLayoutContainer()->setLayout(layout);
  
      // set margin
-@@ -226,6 +302,164 @@ void Window::addLayout()
+@@ -226,6 +303,176 @@ void Window::addLayout()
      this->notebook_->setShowAddButton(true);
  }
  
@@ -3520,6 +3521,17 @@ index a013e705f..7272eafcd 100644
 +    this->arianaRefreshBars();
 +}
 +
++void Window::arianaFixResize()
++{
++    // Resize must work in both directions. Chatterino's custom Windows
++    // frame (BaseWindow::handleNCHITTEST) only offers an edge when
++    // minimum != maximum on that axis, so keep both axes explicitly
++    // free: a small minimum, no maximum.
++    this->setMinimumSize(300, 200);
++    this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
++    this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
++}
++
 +void Window::arianaSetMiniMode(bool enabled)
 +{
 +    // Mini mode (opt-in): compact narrow window for a second monitor,
@@ -3535,6 +3547,7 @@ index a013e705f..7272eafcd 100644
 +    {
 +        this->resize(this->arianaPreMiniSize_);
 +    }
++    this->arianaFixResize();
 +    this->arianaRefreshBars();
 +}
 +
@@ -3579,7 +3592,7 @@ index a013e705f..7272eafcd 100644
  void Window::addCustomTitlebarButtons()
  {
      if (!this->hasCustomWindowFrame())
-@@ -754,6 +988,76 @@ void Window::addShortcuts()
+@@ -754,6 +1001,76 @@ void Window::addShortcuts()
  
               return "";
           }},
@@ -3657,7 +3670,7 @@ index a013e705f..7272eafcd 100644
  
      this->addDebugStuff(actions);
 diff --git a/src/widgets/Window.hpp b/src/widgets/Window.hpp
-index 706fbce60..ceb477ee3 100644
+index 706fbce60..ed22a8d1f 100644
 --- a/src/widgets/Window.hpp
 +++ b/src/widgets/Window.hpp
 @@ -10,6 +10,8 @@
@@ -3679,7 +3692,7 @@ index 706fbce60..ceb477ee3 100644
  
  /**
   * @exposeenum c2.WindowType
-@@ -35,6 +40,15 @@ public:
+@@ -35,6 +40,16 @@ public:
      SplitNotebook &getNotebook();
      void showFollowedChannels();
  
@@ -3691,11 +3704,12 @@ index 706fbce60..ceb477ee3 100644
 +    void arianaSetGridMode(bool enabled);
 +    void arianaSetMiniMode(bool enabled);
 +    void arianaRefreshBars();
++    void arianaFixResize();
 +
      void setPopupID(size_t id);
      std::optional<size_t> popupID() const;
  
-@@ -51,6 +65,7 @@ private:
+@@ -51,6 +66,7 @@ private:
          std::map<QString, std::function<QString(std::vector<QString>)>>
              &actions);
      void addShortcuts() override;
@@ -3703,7 +3717,7 @@ index 706fbce60..ceb477ee3 100644
      void addLayout();
      void onAccountSelected();
      void addMenuBar();
-@@ -59,6 +74,17 @@ private:
+@@ -59,6 +75,17 @@ private:
  
      SplitNotebook *notebook_;
      LabelButton *userLabel_ = nullptr;
@@ -3722,7 +3736,7 @@ index 706fbce60..ceb477ee3 100644
  
      pajlada::Signals::SignalHolder signalHolder_;
 diff --git a/src/widgets/dialogs/SettingsDialog.cpp b/src/widgets/dialogs/SettingsDialog.cpp
-index 4a8ec6aab..8815fb585 100644
+index 4a8ec6aab..bb84c0f1e 100644
 --- a/src/widgets/dialogs/SettingsDialog.cpp
 +++ b/src/widgets/dialogs/SettingsDialog.cpp
 @@ -16,6 +16,7 @@
@@ -3733,7 +3747,22 @@ index 4a8ec6aab..8815fb585 100644
  #include "widgets/settingspages/ExternalToolsPage.hpp"
  #include "widgets/settingspages/FiltersPage.hpp"
  #include "widgets/settingspages/GeneralPage.hpp"
-@@ -237,6 +238,7 @@ void SettingsDialog::addTabs()
+@@ -55,6 +56,14 @@ SettingsDialog::SettingsDialog(QWidget *parent)
+ 
+     this->resize(915, 600);
+ 
++    // Resize must work in both directions here too. Chatterino's
++    // custom Windows frame (BaseWindow::handleNCHITTEST) only offers an
++    // edge when minimum != maximum on that axis, so keep both axes
++    // explicitly free: a small minimum, no maximum.
++    this->setMinimumSize(630, 450);
++    this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
++    this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
++
+     this->initUi();
+     this->addTabs();
+ 
+@@ -237,6 +246,7 @@ void SettingsDialog::addTabs()
  
      // clang-format off
      this->addTab([]{return new GeneralPage;},          "General",        ":/settings/about.svg", SettingsTabId::General);
@@ -3741,7 +3770,7 @@ index 4a8ec6aab..8815fb585 100644
      this->ui_.tabContainer->addSpacing(16);
      this->addTab([]{return new AccountsPage;},         "Accounts",       ":/settings/accounts.svg", SettingsTabId::Accounts);
      this->addTab([]{return new NicknamesPage;},        "Nicknames",      ":/settings/accounts.svg");
-@@ -377,6 +379,11 @@ void SettingsDialog::showDialog(QWidget *parent,
+@@ -377,6 +387,11 @@ void SettingsDialog::showDialog(QWidget *parent,
          }
          break;
  
