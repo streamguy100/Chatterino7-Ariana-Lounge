@@ -1262,7 +1262,7 @@ index 000000000..789186eea
 +}
 \ No newline at end of file
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 40ebbad7e..e6a146a13 100644
+index 40ebbad7e..a12e9efe9 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -79,6 +79,8 @@ set(SOURCE_FILES
@@ -1274,7 +1274,7 @@ index 40ebbad7e..e6a146a13 100644
          controllers/commands/builtin/Misc.cpp
          controllers/commands/builtin/Misc.hpp
          controllers/commands/builtin/kick/KickRawEvent.cpp
-@@ -731,6 +733,12 @@ set(SOURCE_FILES
+@@ -731,6 +733,13 @@ set(SOURCE_FILES
  
          widgets/AccountSwitchPopup.cpp
          widgets/AccountSwitchPopup.hpp
@@ -1284,10 +1284,11 @@ index 40ebbad7e..e6a146a13 100644
 +        widgets/ArianaLounge.hpp
 +        widgets/ArianaMusic.cpp
 +        widgets/ArianaMusic.hpp
++        widgets/ArianaMusicBar.hpp
          widgets/AccountSwitchWidget.cpp
          widgets/AccountSwitchWidget.hpp
          widgets/AttachedWindow.cpp
-@@ -932,6 +940,8 @@ set(SOURCE_FILES
+@@ -932,6 +941,8 @@ set(SOURCE_FILES
          widgets/settingspages/AccountsPage.hpp
          widgets/settingspages/CommandPage.cpp
          widgets/settingspages/CommandPage.hpp
@@ -1296,7 +1297,7 @@ index 40ebbad7e..e6a146a13 100644
          widgets/settingspages/CustomWidgets.hpp
          widgets/settingspages/ExternalToolsPage.cpp
          widgets/settingspages/ExternalToolsPage.hpp
-@@ -1071,6 +1081,7 @@ target_link_libraries(${LIBRARY_PROJECT}
+@@ -1071,6 +1082,7 @@ target_link_libraries(${LIBRARY_PROJECT}
          Qt${MAJOR_QT_VERSION}::NetworkPrivate # for DELETE with a body (Kick)
          Qt${MAJOR_QT_VERSION}::Svg
          Qt${MAJOR_QT_VERSION}::Concurrent
@@ -2697,15 +2698,16 @@ index 000000000..d6b481d5d
 +}  // namespace chatterino
 diff --git a/src/widgets/ArianaMusic.cpp b/src/widgets/ArianaMusic.cpp
 new file mode 100644
-index 000000000..b13a9b38d
+index 000000000..8b1746130
 --- /dev/null
 +++ b/src/widgets/ArianaMusic.cpp
-@@ -0,0 +1,440 @@
+@@ -0,0 +1,441 @@
 +// SPDX-FileCopyrightText: 2026 Contributors to Chatterino <https://chatterino.com>
 +//
 +// SPDX-License-Identifier: MIT
 +
 +#include "widgets/ArianaMusic.hpp"
++#include "widgets/ArianaMusicBar.hpp"
 +
 +#include "Application.hpp"
 +#include "singletons/Paths.hpp"
@@ -3143,10 +3145,10 @@ index 000000000..b13a9b38d
 +}  // namespace chatterino
 diff --git a/src/widgets/ArianaMusic.hpp b/src/widgets/ArianaMusic.hpp
 new file mode 100644
-index 000000000..bd9788560
+index 000000000..4400ed25e
 --- /dev/null
 +++ b/src/widgets/ArianaMusic.hpp
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,93 @@
 +// SPDX-FileCopyrightText: 2026 Contributors to Chatterino <https://chatterino.com>
 +//
 +// SPDX-License-Identifier: MIT
@@ -3156,7 +3158,6 @@ index 000000000..bd9788560
 +#include <QObject>
 +#include <QString>
 +#include <QStringList>
-+#include <QWidget>
 +
 +#include <pajlada/signals/signalholder.hpp>
 +
@@ -3240,10 +3241,34 @@ index 000000000..bd9788560
 +    pajlada::Signals::SignalHolder connections_;
 +};
 +
++}  // namespace chatterino
+diff --git a/src/widgets/ArianaMusicBar.hpp b/src/widgets/ArianaMusicBar.hpp
+new file mode 100644
+index 000000000..06f48c39c
+--- /dev/null
++++ b/src/widgets/ArianaMusicBar.hpp
+@@ -0,0 +1,38 @@
++// SPDX-FileCopyrightText: 2026 Contributors to Chatterino <https://chatterino.com>
++//
++// SPDX-License-Identifier: MIT
++
++#pragma once
++
++#include <QWidget>
++
++namespace chatterino {
++
 +/// Small music bar (Main window only). Play / Pause, Prev, Next, Mute,
 +/// a volume slider and the Now Playing title — titles only. Hidden
 +/// entirely while background music is off, so the stock look is
 +/// unchanged by default.
++///
++/// NOTE: this used to live in ArianaMusic.hpp next to the player class.
++/// Run #3 failed to compile moc_ArianaMusic.cpp (Qt 6.9's moc output for
++/// two Q_OBJECT classes in one header, the first with signals/slots),
++/// so each Q_OBJECT class now gets its own header — the same one-class-
++/// per-header shape the rest of Chatterino uses. Same class, same
++/// behaviour, just its own file.
 +class ArianaMusicBar : public QWidget
 +{
 +    Q_OBJECT
@@ -3262,20 +3287,21 @@ index 000000000..bd9788560
 +
 +}  // namespace chatterino
 diff --git a/src/widgets/Window.cpp b/src/widgets/Window.cpp
-index a013e705f..3b2546888 100644
+index a013e705f..7272eafcd 100644
 --- a/src/widgets/Window.cpp
 +++ b/src/widgets/Window.cpp
-@@ -22,6 +22,9 @@
+@@ -22,6 +22,10 @@
  #include "singletons/WindowManager.hpp"
  #include "util/RapidJsonSerializeQSize.hpp"
  #include "widgets/AccountSwitchPopup.hpp"
 +#include "widgets/ArianaLounge.hpp"
 +#include "widgets/ArianaLoadingScreen.hpp"
 +#include "widgets/ArianaMusic.hpp"
++#include "widgets/ArianaMusicBar.hpp"
  #include "widgets/buttons/InitUpdateButton.hpp"
  #include "widgets/buttons/LabelButton.hpp"
  #include "widgets/buttons/PixmapButton.hpp"
-@@ -31,6 +34,7 @@
+@@ -31,6 +35,7 @@
  #include "widgets/dialogs/UpdateDialog.hpp"
  #include "widgets/dialogs/WelcomeDialog.hpp"
  #include "widgets/FollowedChannelsWindow.hpp"
@@ -3283,7 +3309,7 @@ index a013e705f..3b2546888 100644
  #include "widgets/helper/NotebookTab.hpp"
  #include "widgets/Notebook.hpp"
  #include "widgets/splits/ClosedSplits.hpp"
-@@ -47,10 +51,14 @@
+@@ -47,10 +52,14 @@
  
  #include <QApplication>
  #include <QDesktopServices>
@@ -3298,7 +3324,7 @@ index a013e705f..3b2546888 100644
  #include <QStandardItemModel>
  #include <QVBoxLayout>
  
-@@ -66,6 +74,7 @@ Window::Window(WindowType type, QWidget *parent)
+@@ -66,6 +75,7 @@ Window::Window(WindowType type, QWidget *parent)
      this->addCustomTitlebarButtons();
      this->addShortcuts();
      this->addLayout();
@@ -3306,7 +3332,7 @@ index a013e705f..3b2546888 100644
  
  #ifdef Q_OS_MACOS
      this->addMenuBar();
-@@ -154,6 +163,22 @@ bool Window::event(QEvent *event)
+@@ -154,6 +164,22 @@ bool Window::event(QEvent *event)
              break;
          }
  
@@ -3329,7 +3355,7 @@ index a013e705f..3b2546888 100644
          case QEvent::WindowDeactivate: {
              auto *page = this->notebook_->getSelectedPage();
  
-@@ -216,7 +241,57 @@ void Window::addLayout()
+@@ -216,7 +242,57 @@ void Window::addLayout()
  {
      auto *layout = new QVBoxLayout();
  
@@ -3388,7 +3414,7 @@ index a013e705f..3b2546888 100644
      this->getLayoutContainer()->setLayout(layout);
  
      // set margin
-@@ -226,6 +301,164 @@ void Window::addLayout()
+@@ -226,6 +302,164 @@ void Window::addLayout()
      this->notebook_->setShowAddButton(true);
  }
  
@@ -3553,7 +3579,7 @@ index a013e705f..3b2546888 100644
  void Window::addCustomTitlebarButtons()
  {
      if (!this->hasCustomWindowFrame())
-@@ -754,6 +987,76 @@ void Window::addShortcuts()
+@@ -754,6 +988,76 @@ void Window::addShortcuts()
  
               return "";
           }},

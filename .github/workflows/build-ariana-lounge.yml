@@ -58,15 +58,16 @@ jobs:
           if (-not (Test-Path src/widgets/ArianaLounge.cpp)) { throw "Patch did NOT land: src/widgets/ArianaLounge.cpp is missing" }
           if (-not (Test-Path src/widgets/ArianaLoadingScreen.cpp)) { throw "Patch did NOT land: src/widgets/ArianaLoadingScreen.cpp is missing" }
           if (-not (Test-Path src/widgets/ArianaMusic.cpp)) { throw "Patch did NOT land: src/widgets/ArianaMusic.cpp is missing" }
+          if (-not (Test-Path src/widgets/ArianaMusicBar.hpp)) { throw "Patch did NOT land: src/widgets/ArianaMusicBar.hpp is missing" }
           if (-not (Test-Path resources/themes/ArianaSweetener.json)) { throw "Patch did NOT land: resources/themes/ArianaSweetener.json is missing" }
           git status --short
           git diff --stat
-          # NOTE: git diff only lists TRACKED files (14) — the 19 new
+          # NOTE: git diff only lists TRACKED files (14) — the 20 new
           # files are untracked, so count via git status instead. The
           # patch file itself (ariana-lounge.patch, copied into upstream/
           # above) is untracked too, so exclude it from the count.
           $changed = (git status --porcelain | Where-Object { $_ -notmatch 'ariana-lounge\.patch' } | Measure-Object -Line).Lines
-          if ($changed -ne 33) { throw "Patch landed $changed files, expected 33 — stopping the build" }
+          if ($changed -ne 34) { throw "Patch landed $changed files, expected 34 — stopping the build" }
           Write-Host "Patch landed: $changed files"
 
       # The loading-screen JPG is NOT in the patch (a binary hunk broke

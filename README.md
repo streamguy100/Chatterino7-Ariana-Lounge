@@ -119,8 +119,8 @@ control — no stock Chatterino volume/audio behaviour is touched.
 
 ## Files
 
-- `ariana-lounge.patch` — 4,175 lines in the file (33 files,
-  +3,746 / −1), TEXT-ONLY, on clean
+- `ariana-lounge.patch` — 4,201 lines in the file (34 files,
+  +3,766 / −1), TEXT-ONLY, on clean
   SevenTV/chatterino7 at `910b01dd428c4ac042028708704278b93227491b`.
   The loading-screen JPG is deliberately NOT in the patch: a binary
   hunk broke `git apply` on the GitHub runner in run #1 (the step
@@ -129,15 +129,18 @@ control — no stock Chatterino volume/audio behaviour is touched.
   repo file instead — see `ariana-loading-screen.jpg` below.
   Verified: `git apply --check` passes and `git apply` applies cleanly
   with no rejects on a fresh clone of that commit, `git diff --check`
-  clean, 33 files land, and the JPG copy + SHA-256 check pass
+  clean, 34 files land, and the JPG copy + SHA-256 check pass
   (copied file hashes to
   `049a088a309fdf03f1bdfdafc4bb6f18fccb198db2e6d2676496ce52080990e2`,
   identical to sir's supplied file).
   New files: `src/widgets/ArianaLounge.{hpp,cpp}`,
   `src/widgets/ArianaLoadingScreen.{hpp,cpp}` (loading screen,
   fades 25% a second, gone at 4s),
-  `src/widgets/ArianaMusic.{hpp,cpp}` (background music player +
-  music bar, QMediaPlayer + QAudioOutput),
+  `src/widgets/ArianaMusic.{hpp,cpp}` (background music player,
+  QMediaPlayer + QAudioOutput) and `src/widgets/ArianaMusicBar.hpp`
+  (music bar — split out of ArianaMusic.hpp after run #3 failed to
+  compile moc_ArianaMusic.cpp with both Q_OBJECT classes in one
+  header; one Q_OBJECT class per header now),
   `src/widgets/settingspages/ArianaPage.{hpp,cpp}`,
   `src/controllers/commands/builtin/ArianaCommands.{hpp,cpp}`,
   9 theme JSONs in `resources/themes/`.
@@ -171,8 +174,8 @@ control — no stock Chatterino volume/audio behaviour is touched.
   throws on a non-zero `git apply` exit code, checks
   `ArianaLounge.cpp`, `ArianaLoadingScreen.cpp`, `ArianaMusic.cpp`
   and `resources/themes/ArianaSweetener.json` exist, and throws
-  unless exactly 33 files changed (counted via `git status`, since
-  `git diff` hides the 19 new untracked files).
+  unless exactly 34 files changed (counted via `git status`, since
+  `git diff` hides the 20 new untracked files).
 - `themes/` — the 9 theme JSONs (same files as in the patch).
 - `ARIANA-LOUNGE-DESIGN.md` — the full design, More 1–4 all in.
 - `concepts/` — 22 concept images (hero + 9 themes + 12 pieces).
