@@ -1932,7 +1932,7 @@ index 000000000..9e2ec9b7e
 +}  // namespace chatterino
 diff --git a/src/widgets/ArianaLounge.cpp b/src/widgets/ArianaLounge.cpp
 new file mode 100644
-index 000000000..57f06bf0b
+index 000000000..d0e6309d4
 --- /dev/null
 +++ b/src/widgets/ArianaLounge.cpp
 @@ -0,0 +1,635 @@
@@ -2372,21 +2372,21 @@ index 000000000..57f06bf0b
 +    auto *miniButton = new QPushButton("Mini", this);
 +    QObject::connect(miniButton, &QPushButton::clicked, this, [this] {
 +        this->window_->arianaSetMiniMode(
-+            !getSettings()->arianaMiniMode.getValue());
++            !getSettings()->arianaMiniModeEnabled.getValue());
 +    });
 +    layout->addWidget(miniButton);
 +
 +    auto *focusButton = new QPushButton("Focus", this);
 +    QObject::connect(focusButton, &QPushButton::clicked, this, [this] {
 +        this->window_->arianaSetFocusMode(
-+            !getSettings()->arianaFocusMode.getValue());
++            !getSettings()->arianaFocusModeEnabled.getValue());
 +    });
 +    layout->addWidget(focusButton);
 +
 +    auto *gridButton = new QPushButton("Grid", this);
 +    QObject::connect(gridButton, &QPushButton::clicked, this, [this] {
 +        this->window_->arianaSetGridMode(
-+            !getSettings()->arianaGridMode.getValue());
++            !getSettings()->arianaGridModeEnabled.getValue());
 +    });
 +    layout->addWidget(gridButton);
 +
@@ -2434,9 +2434,9 @@ index 000000000..57f06bf0b
 +        hour < 12 ? getSettings()->arianaMorningAlbum.getValue()
 +        : hour < 18 ? getSettings()->arianaAfternoonAlbum.getValue()
 +                    : getSettings()->arianaNightAlbum.getValue();
-+    if (isAlbum(album) && album != currentAlbum())
++    if (ArianaLounge::isAlbum(album) && album != ArianaLounge::currentAlbum())
 +    {
-+        applyAlbum(album);
++        ArianaLounge::applyAlbum(album);
 +    }
 +}
 +
@@ -2525,7 +2525,7 @@ index 000000000..57f06bf0b
 +
 +void ArianaTickerBar::refresh()
 +{
-+    const bool mini = getSettings()->arianaMiniMode.getValue();
++    const bool mini = getSettings()->arianaMiniModeEnabled.getValue();
 +    const bool showTicker =
 +        !mini && getSettings()->arianaTickerEnabled.getValue();
 +    const bool showChips =
