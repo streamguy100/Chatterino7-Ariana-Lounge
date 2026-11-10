@@ -77,8 +77,8 @@ jobs:
       # the Build step, so Chatterino's generate_resources.cmake glob
       # embeds it as :/ariana-loading-screen.jpg. The SHA-256 is checked
       # so a wrong or corrupt image can never ship silently. The same
-      # step also copies ariana-figure.png (sir's photo, background
-      # removed), embedded the same way as :/ariana-figure.png.
+      # step also copies ariana_figure.png (sir's photo, background
+      # removed), embedded the same way as :/ariana_figure.png.
       - name: Copy loading-screen image
         shell: pwsh
         run: |
@@ -91,11 +91,11 @@ jobs:
           if ($copied -ne $expected) { throw "Copied JPG SHA-256 mismatch: got $copied" }
           Write-Host "Loading-screen JPG verified and copied, SHA-256 $copied"
           $figureExpected = "d2a47bfb501d3f22154a7371d9382dc0fb4cb6907ceac1438e8a5626a44e1906"
-          if (-not (Test-Path ariana-figure.png)) { throw "ariana-figure.png is missing from the repo root" }
-          $figureActual = (Get-FileHash ariana-figure.png -Algorithm SHA256).Hash.ToLower()
-          if ($figureActual -ne $figureExpected) { throw "ariana-figure.png SHA-256 mismatch: got $figureActual, expected $figureExpected" }
-          Copy-Item ariana-figure.png upstream/resources/ariana-figure.png -Force
-          $figureCopied = (Get-FileHash upstream/resources/ariana-figure.png -Algorithm SHA256).Hash.ToLower()
+          if (-not (Test-Path ariana_figure.png)) { throw "ariana_figure.png is missing from the repo root" }
+          $figureActual = (Get-FileHash ariana_figure.png -Algorithm SHA256).Hash.ToLower()
+          if ($figureActual -ne $figureExpected) { throw "ariana_figure.png SHA-256 mismatch: got $figureActual, expected $figureExpected" }
+          Copy-Item ariana_figure.png upstream/resources/ariana_figure.png -Force
+          $figureCopied = (Get-FileHash upstream/resources/ariana_figure.png -Algorithm SHA256).Hash.ToLower()
           if ($figureCopied -ne $figureExpected) { throw "Copied PNG SHA-256 mismatch: got $figureCopied" }
           Write-Host "Ariana figure PNG verified and copied, SHA-256 $figureCopied"
 
