@@ -97,45 +97,48 @@ below.
 `QMediaPlayer` + `QAudioOutput`. It plays ONLY the user's own mp3s
 from the `ArianaMusic` folder under the app data directory
 (`%APPDATA%\Chatterino2\ArianaMusic` on Windows) — no songs are
-bundled in the patch, the repo, or the exe. 5 songs, in this order,
-1 minute each, then back to the first, looping forever: bloodline,
-Into You, 7 rings, Dangerous Woman, 34+35. A 60-second cutoff timer
-runs while playing, so a file can never play past 60 seconds even
-if a full-length file is in the folder. Controls: a small music bar
-under the ticker (Play / Pause, Prev, Next, Mute, volume slider,
-Now Playing title only) and the Ariana Settings section
-(enable checkbox, "Background music volume" slider 0–100, status,
-folder path, "Open music folder" button). Default OFF on first
-launch — no surprise sound, stock behaviour unchanged. On / off
-and volume are remembered across restarts; music only auto-plays
-on startup if it was left on and the files are present. One volume,
+bundled in the patch, the repo, or the exe. Folder-based: whatever
+mp3 files are in the folder, played in filename order, each song in
+full, looping back to the first after the last, forever. There is no
+fixed song list and no cutoff — files dropped in (or taken out) while
+the app runs are picked up on the next navigation, start, or enable.
+Controls: a small music bar under the ticker (Play / Pause, Prev,
+Next, Mute, volume slider, Now Playing title only) and the Ariana
+Settings section (enable checkbox, "Background music volume" slider
+0–100, status, folder path, "Open music folder" button). Default OFF
+on first launch — no surprise sound, stock behaviour unchanged. On /
+off and volume are remembered across restarts; music only auto-plays
+on startup if it was left on and the folder has mp3s. One volume,
 two places to change it: the bar slider and the Settings slider
 both write the one `arianaMusicVolume` setting (default 80), so
 they are always in sync. 0 is mute; sliding back up un-mutes.
-If the folder or any file is missing, the Settings page says so in
+If the folder is empty or missing, the Settings page says so in
 plain text and the player does nothing — no error popup, no
 blocking chat. Song titles only. This is the ONLY Ariana audio
 control — no stock Chatterino volume/audio behaviour is touched.
 
 ## Files
 
-- `ariana-lounge.patch` — 4,230 lines in the file (34 files,
-  +3,788 / −1), TEXT-ONLY, on clean
+- `ariana-lounge.patch` — 4,406 lines in the file (36 files,
+  +3,952 / −1), TEXT-ONLY, on clean
   SevenTV/chatterino7 at `910b01dd428c4ac042028708704278b93227491b`.
   The loading-screen JPG is deliberately NOT in the patch: a binary
   hunk broke `git apply` on the GitHub runner in run #1 (the step
   did not check the exit code, so the run built stock Chatterino7
   and shipped it under the Ariana name). The JPG ships as a separate
   repo file instead — see `ariana-loading-screen.jpg` below.
+  The figure PNG is likewise NOT in the patch, for the same reason.
   Verified: `git apply --check` passes and `git apply` applies cleanly
   with no rejects on a fresh clone of that commit, `git diff --check`
-  clean, 34 files land, and the JPG copy + SHA-256 check pass
+  clean, 36 files land, and the JPG copy + SHA-256 check pass
   (copied file hashes to
   `049a088a309fdf03f1bdfdafc4bb6f18fccb198db2e6d2676496ce52080990e2`,
   identical to sir's supplied file).
   New files: `src/widgets/ArianaLounge.{hpp,cpp}`,
   `src/widgets/ArianaLoadingScreen.{hpp,cpp}` (loading screen,
   fades 25% a second, gone at 4s),
+  `src/widgets/ArianaFigure.{hpp,cpp}` (standing Ariana figure,
+  bottom-left of the Main window, mouse events pass through),
   `src/widgets/ArianaMusic.{hpp,cpp}` (background music player,
   QMediaPlayer + QAudioOutput) and `src/widgets/ArianaMusicBar.hpp`
   (music bar — split out of ArianaMusic.hpp after run #3 failed to
@@ -148,11 +151,11 @@ control — no stock Chatterino volume/audio behaviour is touched.
   that file arrives via the workflow copy step.)
   Edited (additive only):
   `CMakeLists.txt` (Qt `Multimedia` component),
-  `Settings.hpp` (music on/off + volume settings), `Theme.cpp`,
+  `Settings.hpp` (music on/off + volume settings, figure toggle), `Theme.cpp`,
   `MessageFlag.hpp`, `MessageLayout.{hpp,cpp}`,
-  `Window.{hpp,cpp}` (music bar + loading-screen hook on first show), `SettingsDialog.{hpp,cpp}`,
+  `Window.{hpp,cpp}` (music bar + loading-screen hook on first show, figure hook), `SettingsDialog.{hpp,cpp}`,
   `SettingsDialogTab.hpp`, `Split.cpp`, `CommandController.cpp`,
-  `src/CMakeLists.txt` (ArianaMusic + ArianaLoadingScreen sources +
+  `src/CMakeLists.txt` (ArianaMusic + ArianaLoadingScreen + ArianaFigure sources +
   `Qt6::Multimedia` link).
 - `ariana-loading-screen.jpg` — sir's supplied loading-screen image
   (1024x572 JPEG, SHA-256
@@ -162,6 +165,15 @@ control — no stock Chatterino volume/audio behaviour is touched.
   `upstream/resources/ariana-loading-screen.jpg` before building and
   throws if the SHA-256 does not match, so a wrong or corrupt image
   can never ship silently. Never regenerate or recolour it.
+- `ariana-figure.png` — sir's supplied beach photo with the
+  background removed (202x600 PNG, transparent, SHA-256
+  `d2a47bfb501d3f22154a7371d9382dc0fb4cb6907ceac1438e8a5626a44e1906`),
+  a separate repo file at the repo root, same rule as the JPG: the
+  workflow's "Copy loading-screen image" step also copies it into
+  `upstream/resources/ariana-figure.png` before building and throws
+  if the SHA-256 does not match. The figure herself is untouched —
+  same body, same face as the photo he sent; only the beach
+  background was removed. Never regenerate or recolour it.
 - `build-ariana-lounge.yml` — GitHub Actions, adapted from the
   Fold-iPhone workflow (same Qt 6.9.3 / MSVC2022 / windows-2022 /
   conan 2.11.0 pattern, Setup Python BEFORE clone to avoid the
@@ -172,10 +184,11 @@ control — no stock Chatterino volume/audio behaviour is touched.
   The "Apply Ariana Lounge patch" step now fails the build if the
   patch does not land: it rejects any binary hunk in the patch,
   throws on a non-zero `git apply` exit code, checks
-  `ArianaLounge.cpp`, `ArianaLoadingScreen.cpp`, `ArianaMusic.cpp`
+  `ArianaLounge.cpp`, `ArianaLoadingScreen.cpp`, `ArianaFigure.cpp`,
+  `ArianaMusic.cpp`
   and `resources/themes/ArianaSweetener.json` exist, and throws
-  unless exactly 34 files changed (counted via `git status`, since
-  `git diff` hides the 20 new untracked files).
+  unless exactly 36 files changed (counted via `git status`, since
+  `git diff` hides the 22 new untracked files).
 - `themes/` — the 9 theme JSONs (same files as in the patch).
 - `ARIANA-LOUNGE-DESIGN.md` — the full design, More 1–4 all in.
 - `concepts/` — 22 concept images (hero + 9 themes + 12 pieces).
@@ -236,9 +249,8 @@ Chatterino builds.
 - Music plays through Qt Multimedia's Windows Media Foundation
   backend, which is how stock Windows plays mp3s. If Media
   Foundation is missing on a PC, music will not play; the rest of
-  Chatterino is unaffected. No songs are bundled — sir must copy
-  his own 5 trimmed mp3s into `%APPDATA%\Chatterino2\ArianaMusic\`
-  with the exact names `01-bloodline.mp3`, `02-into-you.mp3`,
-  `03-7-rings.mp3`, `04-dangerous-woman.mp3`, `05-34-35.mp3`.
+  Chatterino is unaffected. No songs are bundled — sir drops any
+  mp3 files of his own into `%APPDATA%\Chatterino2\ArianaMusic\`
+  and the player plays them in filename order.
 - NoFreeze, !pause, Anonymous mode, and Old People UI are NOT in
   this patch — they stay separate packs, untouched.

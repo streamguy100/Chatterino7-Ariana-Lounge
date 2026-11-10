@@ -57,17 +57,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "git apply ariana-lounge.patch FAILED with exit code $LASTEXITCODE — patch did not land, stopping the build" }
           if (-not (Test-Path src/widgets/ArianaLounge.cpp)) { throw "Patch did NOT land: src/widgets/ArianaLounge.cpp is missing" }
           if (-not (Test-Path src/widgets/ArianaLoadingScreen.cpp)) { throw "Patch did NOT land: src/widgets/ArianaLoadingScreen.cpp is missing" }
+          if (-not (Test-Path src/widgets/ArianaFigure.cpp)) { throw "Patch did NOT land: src/widgets/ArianaFigure.cpp is missing" }
           if (-not (Test-Path src/widgets/ArianaMusic.cpp)) { throw "Patch did NOT land: src/widgets/ArianaMusic.cpp is missing" }
           if (-not (Test-Path src/widgets/ArianaMusicBar.hpp)) { throw "Patch did NOT land: src/widgets/ArianaMusicBar.hpp is missing" }
           if (-not (Test-Path resources/themes/ArianaSweetener.json)) { throw "Patch did NOT land: resources/themes/ArianaSweetener.json is missing" }
           git status --short
           git diff --stat
-          # NOTE: git diff only lists TRACKED files (14) — the 20 new
+          # NOTE: git diff only lists TRACKED files (14) — the 22 new
           # files are untracked, so count via git status instead. The
           # patch file itself (ariana-lounge.patch, copied into upstream/
           # above) is untracked too, so exclude it from the count.
           $changed = (git status --porcelain | Where-Object { $_ -notmatch 'ariana-lounge\.patch' } | Measure-Object -Line).Lines
-          if ($changed -ne 34) { throw "Patch landed $changed files, expected 34 — stopping the build" }
+          if ($changed -ne 36) { throw "Patch landed $changed files, expected 36 — stopping the build" }
           Write-Host "Patch landed: $changed files"
 
       # The loading-screen JPG is NOT in the patch (a binary hunk broke
@@ -75,7 +76,9 @@ jobs:
       # the repo root and is copied into upstream/resources/ here, BEFORE
       # the Build step, so Chatterino's generate_resources.cmake glob
       # embeds it as :/ariana-loading-screen.jpg. The SHA-256 is checked
-      # so a wrong or corrupt image can never ship silently.
+      # so a wrong or corrupt image can never ship silently. The same
+      # step also copies ariana-figure.png (sir's photo, background
+      # removed), embedded the same way as :/ariana-figure.png.
       - name: Copy loading-screen image
         shell: pwsh
         run: |
@@ -87,6 +90,14 @@ jobs:
           $copied = (Get-FileHash upstream/resources/ariana-loading-screen.jpg -Algorithm SHA256).Hash.ToLower()
           if ($copied -ne $expected) { throw "Copied JPG SHA-256 mismatch: got $copied" }
           Write-Host "Loading-screen JPG verified and copied, SHA-256 $copied"
+          $figureExpected = "d2a47bfb501d3f22154a7371d9382dc0fb4cb6907ceac1438e8a5626a44e1906"
+          if (-not (Test-Path ariana-figure.png)) { throw "ariana-figure.png is missing from the repo root" }
+          $figureActual = (Get-FileHash ariana-figure.png -Algorithm SHA256).Hash.ToLower()
+          if ($figureActual -ne $figureExpected) { throw "ariana-figure.png SHA-256 mismatch: got $figureActual, expected $figureExpected" }
+          Copy-Item ariana-figure.png upstream/resources/ariana-figure.png -Force
+          $figureCopied = (Get-FileHash upstream/resources/ariana-figure.png -Algorithm SHA256).Hash.ToLower()
+          if ($figureCopied -ne $figureExpected) { throw "Copied PNG SHA-256 mismatch: got $figureCopied" }
+          Write-Host "Ariana figure PNG verified and copied, SHA-256 $figureCopied"
 
       # Qt Multimedia is needed for the Ariana Lounge background music
       # (QMediaPlayer + QAudioOutput). The Qt cache key is bumped to
