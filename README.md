@@ -165,12 +165,12 @@ control — no stock Chatterino volume/audio behaviour is touched.
   `upstream/resources/ariana-loading-screen.jpg` before building and
   throws if the SHA-256 does not match, so a wrong or corrupt image
   can never ship silently. Never regenerate or recolour it.
-- `ariana-figure.png` — sir's supplied beach photo with the
+- `ariana_figure.png` — sir's supplied beach photo with the
   background removed (202x600 PNG, transparent, SHA-256
   `d2a47bfb501d3f22154a7371d9382dc0fb4cb6907ceac1438e8a5626a44e1906`),
   a separate repo file at the repo root, same rule as the JPG: the
   workflow's "Copy loading-screen image" step also copies it into
-  `upstream/resources/ariana-figure.png` before building and throws
+  `upstream/resources/ariana_figure.png` before building and throws
   if the SHA-256 does not match. The figure herself is untouched —
   same body, same face as the photo he sent; only the beach
   background was removed. Never regenerate or recolour it.
